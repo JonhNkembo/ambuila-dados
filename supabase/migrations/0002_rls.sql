@@ -161,3 +161,10 @@ create policy "site_files_update" on storage.objects for update to authenticated
   using (bucket_id = 'site' and public.current_role_name() in ('Superadministrador','Administrador Municipal'));
 create policy "site_files_delete" on storage.objects for delete to authenticated
   using (bucket_id = 'site' and public.current_role_name() in ('Superadministrador','Administrador Municipal'));
+
+-- ---------- Arranque: ainda não existe nenhum utilizador activo? (devolve apenas true/false) ----------
+create or replace function public.no_active_users()
+returns boolean language sql stable security definer set search_path = public as $$
+  select not exists (select 1 from public.profiles where active = true)
+$$;
+grant execute on function public.no_active_users() to anon, authenticated;

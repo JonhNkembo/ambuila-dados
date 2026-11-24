@@ -2,14 +2,14 @@
 import { useState, useTransition } from 'react';
 import { useToast } from './Toast';
 import ActionForm from './ActionForm';
-import { createUser, setRegistration, updateUserAccess } from '@/app/admin/actions';
+import { createUser, setRegistration, setRegistrationMode, updateUserAccess } from '@/app/admin/actions';
 import { assignableRoles } from '@/lib/permissions';
 import { ROLE_RANK } from '@/lib/constants';
-import type { Profile, Role } from '@/lib/types';
+import type { Profile, RegistrationMode, Role } from '@/lib/types';
 
 interface Draft { role: Role; sector: string | null; active: boolean }
 
-export default function UsersTable({ users, me, categories, allowRegistration }: { users: Profile[]; me: Profile; categories: string[]; allowRegistration: boolean }) {
+export default function UsersTable({ users, me, categories, allowRegistration, mode }: { users: Profile[]; me: Profile; categories: string[]; allowRegistration: boolean; mode: RegistrationMode }) {
   const toast = useToast();
   const [pending, start] = useTransition();
   const [draft, setDraft] = useState<Record<string, Draft>>({});
@@ -18,7 +18,7 @@ export default function UsersTable({ users, me, categories, allowRegistration }:
 
   const val = (u: Profile): Draft => draft[u.id] ?? { role: u.role, sector: u.sector, active: u.active };
   const dirty = (u: Profile) => { const v = val(u); return v.role !== u.role || v.sector !== u.sector || v.active !== u.active; };
-  const editable = (u: Profile) => u.id !== me.id && (me.role === 'Superadministrador' || ROLE_RANK[u.role] < ROLE_RANK[me.role]);
+  const editable = (u: Profile) => u.id !== me.id && roles.includes(u.role);
   const pendingUsers = users.filter((u) => !u.active).length;
 
   return (
@@ -27,12 +27,19 @@ export default function UsersTable({ users, me, categories, allowRegistration }:
         <div>
           <div className="fw-bold text-inst-dark small">Tela de cadastro na página de login</div>
           <div className="small text-muted">
-            {allowRegistration ? 'ACTIVA: quem pedir acesso fica pendente até aprovação.' : 'OCULTA: só entra quem já tem conta criada pela administração.'}
+            {allowRegistration ? (mode === 'email' ? 'ACTIVA: quem confirmar o email entra logo com o perfil que escolheu.' : 'ACTIVA: depois de confirmar o email, a conta aguarda aprovação.') : 'OCULTA: só entra quem já tem conta criada pela administração.'}
           </div>
         </div>
+        <div className="d-flex align-items-center gap-3">
+        <select className="form-select form-select-sm w-auto" value={mode} disabled={pending} aria-label="Modo de cadastro"
+          onChange={(e) => start(async () => { const r = await setRegistrationMode(e.target.value as RegistrationMode); toast(r.message, r.ok); })}>
+          <option value="email">1.ª fase: confirmar email activa a conta</option>
+          <option value="approval">Email + aprovação do administrador</option>
+        </select>
         <div className="form-check form-switch fs-5 mb-0">
           <input className="form-check-input" type="checkbox" role="switch" checked={allowRegistration} disabled={pending} aria-label="Tela de cadastro"
             onChange={(e) => start(async () => { const r = await setRegistration(e.target.checked); toast(r.message, r.ok); })} />
+        </div>
         </div>
       </div>
 
@@ -50,7 +57,15 @@ export default function UsersTable({ users, me, categories, allowRegistration }:
                     return (
                       <tr key={u.id}>
                         <td><div className="fw-semibold">{u.name}{u.id === me.id && <span className="badge bg-light text-dark border ms-1">Você</span>}</div>
-                          <div className="text-muted" style={{ fontSize: '0.72rem' }}>{u.email}</div></td>
+                          <div className="text-muted" style={{ fontSize: '0.72rem' }}>{u.email}</div>
+                          {!u.active && u.requested_role && (
+                            <div className="mt-1">
+                              <span className="badge bg-warning text-dark">Pediu: {u.requested_role}{u.requested_sector ? ` (${u.requested_sector})` : ''}</span>
+                              <button className="btn btn-sm btn-success py-0 ms-1" disabled={pending || !roles.includes(u.requested_role)}
+                                title={roles.includes(u.requested_role) ? 'Aprovar com o perfil pedido' : 'O seu nível não permite atribuir este perfil'}
+                                onClick={() => start(async () => { const r = await updateUserAccess(u.id, u.requested_role!, u.requested_sector, true); toast(r.message, r.ok); })}>Aprovar</button>
+                            </div>
+                          )}</td>
                         <td style={{ minWidth: 190 }}>
                           {editable(u) ? (
                             <select className="form-select form-select-sm" value={v.role} aria-label={`Função de ${u.name}`}

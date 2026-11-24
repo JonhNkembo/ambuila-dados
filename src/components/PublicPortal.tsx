@@ -18,10 +18,10 @@ import type { Category, Commune, Dataset, HeroImage, LocationPoint, PortalConten
 interface Props {
   datasets: Dataset[]; communes: Commune[]; categories: Category[]; projects: Project[];
   locations: LocationPoint[]; publications: Publication[]; loggedIn: boolean;
-  logoUrl: string; hero: HeroImage[]; content: PortalContent[];
+  logoUrl: string; hero: HeroImage[]; content: PortalContent[]; allowRegistration: boolean;
 }
 
-export default function PublicPortal({ datasets, communes, categories, projects, locations, publications, loggedIn, logoUrl, hero, content }: Props) {
+export default function PublicPortal({ datasets, communes, categories, projects, locations, publications, loggedIn, logoUrl, hero, content, allowRegistration }: Props) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [search, setSearch] = useState('');
   const [catFilter, setCatFilter] = useState('ALL');
@@ -97,15 +97,6 @@ export default function PublicPortal({ datasets, communes, categories, projects,
         </div>
       </div>
 
-      {/* Aviso metodológico */}
-      <div className="demo-disclaimer-bar d-flex align-items-center gap-2 no-print">
-        <Info size={15} className="text-inst-primary flex-shrink-0" />
-        <span>
-          <strong>Nota Metodológica:</strong> os registos marcados como <strong>DEMONSTRAÇÃO</strong> seguem a divisão administrativa oficial de Ambuíla
-          (Sede de Ambuíla / Nova Ambuíla e Quipedro). Novos registos aparecem aqui após validação e publicação.
-        </span>
-      </div>
-
       {/* Navbar */}
       <nav className="navbar navbar-expand-lg public-navbar sticky-top">
         <div className="container">
@@ -129,6 +120,9 @@ export default function PublicPortal({ datasets, communes, categories, projects,
                 </li>
               ))}
             </ul>
+            {!loggedIn && allowRegistration && (
+              <Link href="/login?cadastro=1" className="btn btn-inst-outline btn-sm px-3 py-2 me-2">Cadastrar</Link>
+            )}
             <Link href={loggedIn ? '/admin' : '/login'} className="btn btn-inst-primary btn-sm px-3 py-2 d-flex align-items-center gap-2">
               <ShieldCheck size={16} /> <span>Painel Administrativo</span>
             </Link>

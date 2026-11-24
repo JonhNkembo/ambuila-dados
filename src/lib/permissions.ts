@@ -39,9 +39,15 @@ export const canManageHeroAndRegistration = canManageCommunes;
 export const canManageContent = (p?: P | null) => p?.role === 'Superadministrador';
 export const canViewAudit = (p?: P | null) => isAdminLevel(p);
 
-/** Funções que o utilizador pode atribuir (só abaixo da sua; o Superadministrador atribui todas). */
+/**
+ * Funções que o utilizador pode atribuir (e gerir):
+ * - Superadministrador: todas (incluindo outros Superadministradores);
+ * - Administrador Municipal: todas menos Superadministrador (pode criar outros administradores municipais);
+ * - restantes: só as de nível inferior (na prática não gerem utilizadores).
+ */
 export function assignableRoles(p: P): Role[] {
   if (p.role === 'Superadministrador') return ROLES;
+  if (p.role === 'Administrador Municipal') return ROLES.filter((r) => r !== 'Superadministrador');
   return ROLES.filter((r) => ROLE_RANK[r] < ROLE_RANK[p.role]);
 }
 export const canAssign = (p: P, target: Role) => assignableRoles(p).includes(target);

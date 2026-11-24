@@ -261,18 +261,17 @@ export async function updateUserAccess(userId: string, role: Role, sector: strin
   const ctx = await requireProfile();
   if (!canManageUsers(ctx.profile)) return fail('Sem permissão para gerir acessos.');
   if (!ROLES.includes(role)) return fail('Perfil inválido.');
-  if (!canAssign(ctx.profile, role)) return fail('Não pode atribuir uma função igual ou superior à sua.');
+  if (!canAssign(ctx.profile, role)) return fail('Não pode atribuir este perfil.');
   if (userId === ctx.user.id) return fail('Não pode alterar o seu próprio acesso.');
   if (role === 'Funcionário de Sector' && !sector) return fail('Indique o sector do funcionário.');
 
   const admin = createAdminClient();
   const { data: target } = await admin.from('profiles').select('name, role').eq('id', userId).single();
   if (!target) return fail('Utilizador não encontrado.');
-  if (ctx.profile.role !== 'Superadministrador' && ROLE_RANK[target.role as Role] >= ROLE_RANK[ctx.profile.role])
-    return fail('Não pode alterar um utilizador de nível igual ou superior ao seu.');
+  if (!canAssign(ctx.profile, target.role as Role)) return fail('Não pode alterar um utilizador com este perfil.');
 
   const { error } = await admin.from('profiles')
-    .update({ role, active, sector: role === 'Funcionário de Sector' ? sector : null }).eq('id', userId);
+    .update({ role, active, sector: role === 'Funcionário de Sector' ? sector : null, ...(active ? { requested_role: null, requested_sector: null } : {}) }).eq('id', userId);
   if (error) return fail(error.message);
   await audit(ctx, 'Utilizadores', `Definiu ${target.name} como "${role}" (${active ? 'activo' : 'inactivo/pendente'}).`);
   refresh();
@@ -290,7 +289,7 @@ export async function createUser(fd: FormData): Promise<ActionResult> {
   const name = str(fd, 'name');
   if (!name || !email) return fail('Nome e email são obrigatórios.');
   if (password.length < 8) return fail('A palavra-passe deve ter pelo menos 8 caracteres.');
-  if (!canAssign(ctx.profile, role)) return fail('Não pode criar uma conta com função igual ou superior à sua.');
+  if (!canAssign(ctx.profile, role)) return fail('Não pode criar uma conta com este perfil.');
   if (role === 'Funcionário de Sector' && !sector) return fail('Indique o sector do funcionário.');
 
   const admin = createAdminClient();
@@ -321,6 +320,17 @@ export async function setRegistration(enabled: boolean): Promise<ActionResult> {
   await audit(ctx, 'Configurações', `${enabled ? 'Activou' : 'Ocultou'} a tela de cadastro na página de login.`);
   refresh();
   return done(enabled ? 'Tela de cadastro ACTIVA no login.' : 'Tela de cadastro OCULTA. Só entra quem já tem conta.');
+}
+
+export async function setRegistrationMode(mode: 'email' | 'approval'): Promise<ActionResult> {
+  const ctx = await requireProfile();
+  if (!canManageHeroAndRegistration(ctx.profile)) return fail('Sem permissão para alterar o modo de cadastro.');
+  if (mode !== 'email' && mode !== 'approval') return fail('Modo inválido.');
+  const { error } = await ctx.supabase.from('site_settings').update({ registration_mode: mode, updated_at: new Date().toISOString() }).eq('id', 1);
+  if (error) return fail(error.message);
+  await audit(ctx, 'Configurações', `Modo de cadastro: ${mode === 'email' ? 'confirmação por email' : 'aprovação por administrador'}.`);
+  refresh();
+  return done(mode === 'email' ? 'Cadastro: confirmar o email activa a conta.' : 'Cadastro: depois do email, um administrador aprova.');
 }
 
 /* ------------------------------ Imagens do portal ------------------------------ */

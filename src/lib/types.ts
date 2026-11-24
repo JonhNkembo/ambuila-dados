@@ -16,6 +16,8 @@ export interface Profile {
   email: string;
   role: Role;
   sector: string | null;
+  requested_role: Role | null;
+  requested_sector: string | null;
   institution: string | null;
   phone: string | null;
   active: boolean;
@@ -64,7 +66,8 @@ export interface AuditLog {
   id: number; created_at: string; user_name: string; role: string; module: string; action: string;
 }
 
-export interface SiteSettings { id: number; allow_registration: boolean; logo_path: string | null }
+export type RegistrationMode = 'email' | 'approval';
+export interface SiteSettings { id: number; allow_registration: boolean; registration_mode: RegistrationMode; logo_path: string | null }
 export interface HeroImage { id: string; path: string; caption: string; sort_order: number; active: boolean }
 export type ContentKind = 'destaque' | 'numero' | 'noticia';
 export interface PortalContent {

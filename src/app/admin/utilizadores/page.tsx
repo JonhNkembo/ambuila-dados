@@ -14,5 +14,5 @@ export default async function UtilizadoresPage() {
     loadCore(supabase),
     loadSiteSettings(supabase),
   ]);
-  return <UsersTable users={(data ?? []) as Profile[]} me={profile} categories={categories.map((c) => c.id)} allowRegistration={settings.allow_registration} />;
+  return <UsersTable users={(data ?? []) as Profile[]} me={profile} categories={categories.map((c) => c.id)} allowRegistration={settings.allow_registration} mode={settings.registration_mode} />;
 }

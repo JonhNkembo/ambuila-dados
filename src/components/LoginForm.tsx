@@ -7,25 +7,34 @@ import Brand from './Brand';
 import { createClient } from '@/lib/supabase/client';
 import { recordAuth } from '@/app/admin/actions';
 import { registerSelf } from '@/app/login/actions';
+import { ROLES } from '@/lib/constants';
+import type { Role } from '@/lib/types';
 
-function Inner({ allowRegistration, logoUrl }: { allowRegistration: boolean; logoUrl: string }) {
+function Inner({ allowRegistration, firstUser, mode, categories, logoUrl }: { allowRegistration: boolean; firstUser: boolean; mode: 'email' | 'approval'; categories: string[]; logoUrl: string }) {
   const router = useRouter();
   const params = useSearchParams();
-  const [tab, setTab] = useState<'login' | 'register'>('login');
+  const [tab, setTab] = useState<'login' | 'register'>(firstUser || (allowRegistration && params.get('cadastro') === '1') ? 'register' : 'login');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [error, setError] = useState(params.get('erro') === 'inactivo' ? 'A sua conta está inactiva ou a aguardar aprovação de um administrador.' : '');
+  const erro = params.get('erro');
+  const [error, setError] = useState(
+    erro === 'inactivo' ? 'A sua conta está inactiva ou a aguardar aprovação de um administrador.'
+    : erro === 'pendente' ? 'Email confirmado. A conta aguarda aprovação de um administrador.'
+    : erro === 'link' ? 'Ligação de confirmação inválida ou expirada. Faça novo cadastro ou peça reenvio.' : '');
   const [info, setInfo] = useState('');
+  const [notConfirmed, setNotConfirmed] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [wantedRole, setWantedRole] = useState<Role>('Funcionário Normal');
   const [pending, start] = useTransition();
 
   async function onLogin(e: React.FormEvent) {
     e.preventDefault();
-    setLoading(true); setError(''); setInfo('');
+    setLoading(true); setError(''); setInfo(''); setNotConfirmed(false);
     const { error } = await createClient().auth.signInWithPassword({ email: email.trim(), password });
     if (error) {
       setLoading(false);
-      setError('Credenciais inválidas. Verifique o email e a palavra-passe.');
+      if (/not confirmed/i.test(error.message)) { setNotConfirmed(true); setError('Ainda não confirmou o email. Abra a ligação que lhe enviámos.'); }
+      else setError('Credenciais inválidas. Verifique o email e a palavra-passe.');
       return;
     }
     await recordAuth('login').catch(() => {});
@@ -40,6 +49,7 @@ function Inner({ allowRegistration, logoUrl }: { allowRegistration: boolean; log
     setError(''); setInfo('');
     start(async () => {
       const r = await registerSelf(fd);
+      if (r.ok && r.redirect) { router.push('/admin'); router.refresh(); return; }
       if (r.ok) { setInfo(r.message); form.reset(); setTab('login'); } else setError(r.message);
     });
   }
@@ -55,6 +65,12 @@ function Inner({ allowRegistration, logoUrl }: { allowRegistration: boolean; log
             <small className="text-muted">Painel Administrativo • Acesso restrito</small>
           </div>
         </div>
+
+        {firstUser && (
+          <div className="alert alert-info py-2 small">
+            <strong>Primeiro acesso:</strong> ainda não existe nenhum utilizador. O primeiro cadastro (confirmado por email) cria o <strong>Superadministrador</strong> do portal.
+          </div>
+        )}
 
         {allowRegistration && (
           <ul className="nav nav-pills nav-fill mb-3 small">
@@ -75,6 +91,9 @@ function Inner({ allowRegistration, logoUrl }: { allowRegistration: boolean; log
               <input id="password" type="password" className="form-control" value={password} onChange={(e) => setPassword(e.target.value)} autoComplete="current-password" required />
             </div>
             {error && <div className="alert alert-danger py-2 small" role="alert">{error}</div>}
+            {notConfirmed && (
+              <button type="button" className="btn btn-link btn-sm px-0 mb-2" onClick={async () => { await createClient().auth.resend({ type: 'signup', email: email.trim() }); setInfo('Email de confirmação reenviado.'); setError(''); }}>Reenviar email de confirmação</button>
+            )}
             {info && <div className="alert alert-success py-2 small" role="status">{info}</div>}
             <button className="btn btn-inst-primary w-100 d-flex align-items-center justify-content-center gap-2" disabled={loading}>
               <LogIn size={16} /> {loading ? 'A autenticar…' : 'Entrar no Painel'}
@@ -89,12 +108,26 @@ function Inner({ allowRegistration, logoUrl }: { allowRegistration: boolean; log
               <div className="col-7"><label className="form-label small fw-semibold">Instituição / Sector</label><input name="institution" className="form-control" /></div>
               <div className="col-5"><label className="form-label small fw-semibold">Telefone</label><input name="phone" className="form-control" /></div>
             </div>
+            {!firstUser && (
+              <div className="mb-2">
+                <label className="form-label small fw-semibold">Perfil pretendido *</label>
+                <select name="requested_role" className="form-select" value={wantedRole} onChange={(e) => setWantedRole(e.target.value as Role)}>
+                  {[...ROLES].reverse().map((r) => <option key={r}>{r}</option>)}
+                </select>
+                {wantedRole === 'Funcionário de Sector' && (
+                  <select name="requested_sector" className="form-select mt-2" required defaultValue="">
+                    <option value="" disabled>Sector…</option>{categories.map((c) => <option key={c}>{c}</option>)}
+                  </select>
+                )}
+                <div className="form-text">{mode === 'email' ? 'Ao confirmar o email, a conta fica activa com este perfil.' : 'O perfil é um pedido: só é atribuído quando um administrador com nível suficiente o aprovar.'}</div>
+              </div>
+            )}
             <div className="mb-3"><label className="form-label small fw-semibold">Palavra-passe * (mín. 8)</label><input name="password" type="password" minLength={8} className="form-control" required autoComplete="new-password" /></div>
             {error && <div className="alert alert-danger py-2 small" role="alert">{error}</div>}
             <button className="btn btn-inst-primary w-100 d-flex align-items-center justify-content-center gap-2" disabled={pending}>
-              <UserPlus size={16} /> {pending ? 'A enviar…' : 'Pedir acesso'}
+              <UserPlus size={16} /> {pending ? 'A enviar…' : firstUser ? 'Criar Superadministrador' : 'Cadastrar e confirmar por email'}
             </button>
-            <p className="small text-muted text-center mt-3 mb-0">A conta só fica activa depois de aprovada por um administrador.</p>
+            <p className="small text-muted text-center mt-3 mb-0">{firstUser || mode === 'email' ? 'Enviaremos um email para confirmar a conta.' : 'Depois de confirmar o email, a conta aguarda aprovação de um administrador.'}</p>
           </form>
         )}
         <div className="text-center mt-3"><Link href="/" className="small text-muted">← Voltar ao portal público</Link></div>
@@ -103,6 +136,6 @@ function Inner({ allowRegistration, logoUrl }: { allowRegistration: boolean; log
   );
 }
 
-export default function LoginForm(props: { allowRegistration: boolean; logoUrl: string }) {
+export default function LoginForm(props: { allowRegistration: boolean; firstUser: boolean; mode: 'email' | 'approval'; categories: string[]; logoUrl: string }) {
   return <Suspense><Inner {...props} /></Suspense>;
 }

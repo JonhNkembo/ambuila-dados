@@ -10,7 +10,7 @@ export const siteUrl = (path?: string | null) =>
 
 export async function loadSiteSettings(supabase: SupabaseClient): Promise<SiteSettings> {
   const { data } = await supabase.from('site_settings').select('*').eq('id', 1).maybeSingle();
-  return (data as SiteSettings) ?? { id: 1, allow_registration: true, logo_path: null };
+  return (data as SiteSettings) ?? { id: 1, allow_registration: true, registration_mode: 'email', logo_path: null };
 }
 
 export const logoUrlOf = (s: SiteSettings) => siteUrl(s.logo_path) ?? DEFAULT_LOGO;

@@ -14,6 +14,8 @@ create table if not exists public.profiles (
               check (role in ('Superadministrador','Administrador Municipal','Administrador Adjunto',
                               'Director de Turismo e Cultura','Funcionário de Sector','Funcionário Normal')),
   sector      text,                       -- categoria em que o funcionário de sector trabalha (FK adicionada abaixo)
+  requested_role   text,                  -- perfil pedido no cadastro (só é atribuído quando um administrador aprova)
+  requested_sector text,
   institution text,
   phone       text,
   active      boolean not null default false,   -- contas novas ficam pendentes até serem aprovadas
@@ -126,13 +128,16 @@ create table if not exists public.audit_logs (
 create index if not exists audit_logs_created_idx on public.audit_logs(created_at desc);
 
 -- ---------- Trigger: criar perfil quando nasce um utilizador no Auth ----------
+-- O perfil nasce SEMPRE como 'Funcionário Normal' e inactivo; o perfil escolhido no cadastro fica só em requested_role
+-- e é aplicado pelo servidor (rota /auth/confirm) depois de o email ser confirmado.
 -- SEGURANÇA: o perfil nasce SEMPRE como 'Funcionário Normal' e inactivo. A função e a activação
 -- só são atribuídas por quem tem poder para isso (service role no servidor ou administradores).
 -- Nunca se confia em raw_user_meta_data para o perfil de acesso.
 create or replace function public.handle_new_user()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare req text := new.raw_user_meta_data->>'requested_role';
 begin
-  insert into public.profiles (id, name, email, role, active, institution, phone)
+  insert into public.profiles (id, name, email, role, active, institution, phone, requested_role, requested_sector)
   values (
     new.id,
     coalesce(nullif(new.raw_user_meta_data->>'name', ''), split_part(new.email, '@', 1)),
@@ -140,7 +145,10 @@ begin
     'Funcionário Normal',
     false,
     new.raw_user_meta_data->>'institution',
-    new.raw_user_meta_data->>'phone'
+    new.raw_user_meta_data->>'phone',
+    case when req in ('Superadministrador','Administrador Municipal','Administrador Adjunto',
+                      'Director de Turismo e Cultura','Funcionário de Sector','Funcionário Normal') then req end,
+    nullif(new.raw_user_meta_data->>'requested_sector', '')
   )
   on conflict (id) do nothing;
   return new;
@@ -154,6 +162,9 @@ create trigger on_auth_user_created
 -- ---------- Definições do portal (linha única) ----------
 create table if not exists public.site_settings (
   id                  int primary key default 1 check (id = 1),
+  registration_mode   text    not null default 'email' check (registration_mode in ('email','approval')),
+                      -- 'email'    = 1.ª fase: confirmar o email activa a conta com o perfil escolhido
+                      -- 'approval' = depois de confirmar o email, um administrador aprova
   allow_registration  boolean not null default true,    -- 1.ª fase: tela de cadastro VISÍVEL; o administrador oculta-a depois
   logo_path           text,                              -- logótipo carregado (bucket 'site')
   updated_at          timestamptz not null default now()

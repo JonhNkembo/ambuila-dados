@@ -34,6 +34,7 @@ export default async function HomePage() {
       logoUrl={logoUrlOf(settings)}
       hero={hero}
       content={content}
+      allowRegistration={settings.allow_registration}
     />
   );
 }
