@@ -541,7 +541,7 @@ export default function PublicPortal({ datasets, communes, categories, projects,
                     <span><strong className="text-inst-dark">Administração Municipal de Ambuíla</strong><br />Gabinete de Estudos, Planeamento e Estatística (GEPE)</span></li>
                   <li className="d-flex align-items-center gap-3"><span className="kpi-icon" style={{ ['--kpi-accent' as string]: PALETTE.clay }}><MapPin size={16} /></span><span>Sede Municipal de Ambuíla, Província do Uíge, Angola</span></li>
                   <li className="d-flex align-items-center gap-3"><span className="kpi-icon" style={{ ['--kpi-accent' as string]: PALETTE.ochre }}><Mail size={16} /></span><span>dados@ambuila.uige.gov.ao</span></li>
-                  <li className="d-flex align-items-center gap-3"><span className="kpi-icon" style={{ ['--kpi-accent' as string]: PALETTE.river }}><Clock size={16} /></span><span>Segunda a Sexta-feira, 08h00 – 15h30</span></li>
+                  <li className="d-flex align-items-center gap-3"><span className="kpi-icon" style={{ ['--kpi-accent' as string]: PALETTE.river }}><Clock size={16} /></span><span></span></li>
                 </ul>
               </div>
             </Reveal>
@@ -558,7 +558,7 @@ export default function PublicPortal({ datasets, communes, categories, projects,
             </div>
             <div className="col-md-6 text-md-end small" style={{ color: '#A9C4B4' }}>
               <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: '#F6E7B5' }}>&ldquo;Conhecer os dados. Compreender o território. Promover o desenvolvimento.&rdquo;</div>
-              <div className="mt-1">&copy; 2026 Administração Municipal de Ambuíla. Todos os direitos reservados.</div>
+              <div className="mt-1">&copy;</div>
             </div>
           </div>
         </div>
