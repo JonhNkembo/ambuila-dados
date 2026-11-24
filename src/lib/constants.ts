@@ -95,11 +95,11 @@ export const CATEGORY_FIELDS: Record<string, MetricField[]> = {
 export const MAP_CATEGORIES = ['Educação', 'Saúde', 'Infraestruturas', 'Agricultura', 'Projectos'] as const;
 
 export const MAP_COLORS: Record<string, string> = {
-  'Educação': '#15803D',
-  'Saúde': '#CC092F',
-  Infraestruturas: '#13315C',
-  Agricultura: '#D97706',
-  Projectos: '#7C3AED',
+  'Educação': '#1B5E3B',
+  'Saúde': '#B4412E',
+  Infraestruturas: '#2F6F8F',
+  Agricultura: '#C28B1E',
+  Projectos: '#7A4E8C',
 };
 
 export const AMBUILA_CENTER: [number, number] = [-7.455, 14.645];

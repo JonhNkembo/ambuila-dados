@@ -64,7 +64,7 @@ export default function ThematicModule({ categoryName, datasets, categories, com
           <div className="inst-card p-4 h-100">
             <h4 className="h6 fw-bold text-inst-dark mb-3">Registos por Comuna ({categoryName})</h4>
             <ChartCanvas legend={false} integer labels={communes.map((c) => c.name)}
-              series={[{ label: 'Registos Sectoriais', color: '#13315C', data: communes.map((c) => catDs.filter((d) => d.commune === c.name).length) }]} />
+              series={[{ label: 'Registos Sectoriais', color: '#1B5E3B', data: communes.map((c) => catDs.filter((d) => d.commune === c.name).length) }]} />
           </div>
         </div>
         <div className="col-lg-7">

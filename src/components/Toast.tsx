@@ -15,7 +15,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
       {children}
       {t && (
         <div className="toast-container position-fixed bottom-0 end-0 p-3 no-print" style={{ zIndex: 2000 }}>
-          <div className="toast show align-items-center text-white border-0" style={{ background: t.ok ? '#13315C' : '#CC092F' }} role="status">
+          <div className="toast show align-items-center text-white border-0" style={{ background: t.ok ? '#1B5E3B' : '#B4412E', borderRadius: 12, boxShadow: '0 14px 30px -10px rgba(15,61,38,.55)' }} role="status">
             <div className="d-flex"><div className="toast-body">{t.msg}</div></div>
           </div>
         </div>

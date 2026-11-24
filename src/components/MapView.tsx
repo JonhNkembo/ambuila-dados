@@ -23,15 +23,15 @@ export default function MapView({ locations, height = 440 }: { locations: Locati
         url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
       />
       {locations.map((loc) => (
-        <Marker key={loc.id} position={[loc.lat, loc.lng]} icon={pin(MAP_COLORS[loc.category] ?? '#13315C')}>
+        <Marker key={loc.id} position={[loc.lat, loc.lng]} icon={pin(MAP_COLORS[loc.category] ?? '#1B5E3B')}>
           <Popup>
             <div style={{ minWidth: 200 }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1E4E8C', textTransform: 'uppercase' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, color: '#1B5E3B', textTransform: 'uppercase' }}>
                 {loc.category} • {loc.commune}
               </div>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', margin: '3px 0', color: '#0F294A' }}>{loc.name}</div>
-              <div style={{ fontSize: '0.8rem', color: '#475569', marginBottom: 6 }}>{loc.description}</div>
-              <div style={{ fontSize: '0.72rem', color: '#64748B', borderTop: '1px solid #E2E8F0', paddingTop: 4 }}>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem', margin: '3px 0', color: '#0F3D26' }}>{loc.name}</div>
+              <div style={{ fontSize: '0.8rem', color: '#5E6B63', marginBottom: 6 }}>{loc.description}</div>
+              <div style={{ fontSize: '0.72rem', color: '#5E6B63', borderTop: '1px solid #E4DECF', paddingTop: 4 }}>
                 Coord: {loc.lat.toFixed(4)}, {loc.lng.toFixed(4)} {loc.is_demo ? '(Ref. Demo)' : '(Real)'}
               </div>
             </div>

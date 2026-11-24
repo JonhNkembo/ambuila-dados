@@ -3,6 +3,8 @@ import { loadCore } from '@/lib/data';
 import ActionForm from '@/components/ActionForm';
 import { addProject } from '../actions';
 import { canManageTerritory } from '@/lib/permissions';
+import { ProgressBar } from '@/components/ui';
+import { PALETTE } from '@/lib/theme';
 
 export default async function ProjectosPage() {
   const { supabase, profile } = await requireProfile();
@@ -23,10 +25,7 @@ export default async function ProjectosPage() {
                     <td className="fw-medium">{p.name}{p.is_demo && <span className="badge-demo ms-1">Demo</span>}</td>
                     <td>{p.sector}</td><td>{p.commune}</td><td>{p.year}</td><td className="text-nowrap">{p.budget}</td>
                     <td>
-                      <div className="progress" style={{ height: 8 }} role="progressbar" aria-valuenow={p.progress} aria-valuemin={0} aria-valuemax={100}>
-                        <div className="progress-bar" style={{ width: `${p.progress}%`, backgroundColor: p.progress === 100 ? '#15803D' : '#13315C' }} />
-                      </div>
-                      <small className="text-muted">{p.progress}%</small>
+                      <ProgressBar value={p.progress} color={p.progress >= 100 ? PALETTE.forest : p.progress >= 50 ? PALETTE.ochre : PALETTE.clay} />
                     </td>
                     <td><span className={`badge ${badge(p.status)}`}>{p.status}</span></td>
                   </tr>

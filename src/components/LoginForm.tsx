@@ -2,7 +2,7 @@
 import { Suspense, useState, useTransition } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { LogIn, UserPlus } from 'lucide-react';
+import { LogIn, UserPlus, BarChart3, Map as MapIcon, ShieldCheck } from 'lucide-react';
 import Brand from './Brand';
 import { createClient } from '@/lib/supabase/client';
 import { recordAuth } from '@/app/admin/actions';
@@ -55,16 +55,49 @@ function Inner({ allowRegistration, firstUser, mode, categories, logoUrl }: { al
   }
 
   return (
-    <div className="min-vh-100 d-flex align-items-center justify-content-center p-3" style={{ background: 'linear-gradient(160deg,#0B2545,#13315C)' }}>
-      <div className="inst-card p-4 p-md-5 w-100" style={{ maxWidth: 460, borderTop: '4px solid #CC092F' }}>
-        <div className="d-flex align-items-center gap-3 mb-4">
-          <Brand logoUrl={logoUrl} height={52} />
+    <div className="auth-shell">
+      <aside className="auth-side">
+        <div className="d-flex align-items-center gap-3">
+          <div className="bg-white rounded-3 p-2 d-flex"><Brand logoUrl={logoUrl} height={44} /></div>
           <div>
-            <div className="gov-kicker">Governo de Angola</div>
-            <div className="portal-title" style={{ fontSize: '1rem' }}>Portal de Dados de Ambuíla</div>
-            <small className="text-muted">Painel Administrativo • Acesso restrito</small>
+            <div style={{ fontSize: '0.68rem', letterSpacing: '0.16em', color: '#F7DE8B', fontWeight: 800 }}>GOVERNO DE ANGOLA</div>
+            <div className="fw-bold text-uppercase" style={{ fontFamily: 'var(--font-head)', letterSpacing: '0.02em' }}>Portal de Dados de Ambuíla</div>
           </div>
         </div>
+
+        <div>
+          <h2 className="fw-bold mb-3" style={{ fontSize: 'clamp(1.8rem, 2.6vw, 2.5rem)', letterSpacing: '-0.03em', lineHeight: 1.12 }}>
+            Dados fiáveis para <span style={{ color: '#F7DE8B' }}>decisões públicas</span> melhores.
+          </h2>
+          <p style={{ color: '#CFE3D6', maxWidth: 440 }} className="mb-4">
+            Painel de submissão, validação e publicação da informação estatística, geográfica e sectorial do Município de Ambuíla.
+          </p>
+          <div className="d-flex flex-column gap-2" style={{ maxWidth: 460 }}>
+            <div className="auth-feature"><span className="ic"><BarChart3 size={18} /></span><div><div className="fw-semibold">Indicadores em tempo real</div><div className="small" style={{ color: '#CFE3D6' }}>Dashboards e relatórios calculados a partir dos dados validados.</div></div></div>
+            <div className="auth-feature"><span className="ic"><MapIcon size={18} /></span><div><div className="fw-semibold">Mapa territorial</div><div className="small" style={{ color: '#CFE3D6' }}>Escolas, unidades sanitárias e projectos georreferenciados.</div></div></div>
+            <div className="auth-feature"><span className="ic"><ShieldCheck size={18} /></span><div><div className="fw-semibold">Validação e auditoria</div><div className="small" style={{ color: '#CFE3D6' }}>Cada submissão é revista e fica registada.</div></div></div>
+          </div>
+        </div>
+
+        <div className="small" style={{ color: '#A9C4B4' }}>
+          <span style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: '#F6E7B5' }}>&ldquo;Conhecer os dados. Compreender o território. Promover o desenvolvimento.&rdquo;</span>
+          <div className="mt-2">&copy; 2026 Administração Municipal de Ambuíla</div>
+        </div>
+      </aside>
+
+      <main className="auth-panel">
+        <div className="auth-card">
+          <div className="d-flex align-items-center gap-3 mb-4 d-lg-none">
+            <Brand logoUrl={logoUrl} height={48} />
+            <div>
+              <div className="gov-kicker">Governo de Angola</div>
+              <div className="portal-title" style={{ fontSize: '1rem' }}>Portal de Dados de Ambuíla</div>
+            </div>
+          </div>
+          <div className="mb-4">
+            <h1 className="h4 fw-bold text-inst-dark mb-1">{tab === 'register' && allowRegistration ? 'Criar conta' : 'Bem-vindo de volta'}</h1>
+            <small className="text-muted">Painel Administrativo • Acesso restrito</small>
+          </div>
 
         {firstUser && (
           <div className="alert alert-info py-2 small">
@@ -131,7 +164,8 @@ function Inner({ allowRegistration, firstUser, mode, categories, logoUrl }: { al
           </form>
         )}
         <div className="text-center mt-3"><Link href="/" className="small text-muted">← Voltar ao portal público</Link></div>
-      </div>
+        </div>
+      </main>
     </div>
   );
 }

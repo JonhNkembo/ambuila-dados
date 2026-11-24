@@ -109,7 +109,7 @@ export default function AdminShell({ profile, logoUrl, children }: { profile: Pr
           <div className="d-flex align-items-center gap-3">
             <button className="btn btn-sm btn-outline-secondary d-lg-none" onClick={() => setOpen(true)} aria-label="Abrir menu"><Menu size={18} /></button>
             <div>
-              <h1 className="h5 fw-bold text-inst-dark mb-0">{current.title}</h1>
+              <h1 className="h5 fw-bold text-inst-dark mb-0" style={{ fontFamily: 'var(--font-head)' }}>{current.title}</h1>
               <small className="text-muted">{current.sub}</small>
             </div>
           </div>
@@ -121,7 +121,7 @@ export default function AdminShell({ profile, logoUrl, children }: { profile: Pr
               </Link>
             )}
             <Link href="/admin/perfil" className="d-flex align-items-center gap-2 border-start ps-3 text-decoration-none">
-              <div className="bg-inst-primary text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style={{ width: 34, height: 34, fontSize: '0.8rem' }}>{initials}</div>
+              <div className="avatar text-white rounded-circle d-flex align-items-center justify-content-center fw-bold" style={{ width: 34, height: 34, fontSize: '0.8rem' }}>{initials}</div>
               <div className="d-none d-md-block lh-1">
                 <div className="fw-semibold small text-inst-dark">{profile.name}</div>
                 <small className="text-muted" style={{ fontSize: '0.72rem' }}>{profile.role}</small>
@@ -129,7 +129,7 @@ export default function AdminShell({ profile, logoUrl, children }: { profile: Pr
             </Link>
           </div>
         </header>
-        <main className="p-3 p-md-4 flex-grow-1">{children}</main>
+        <main key={pathname} className="p-3 p-md-4 flex-grow-1 admin-page">{children}</main>
       </div>
     </div>
   );
