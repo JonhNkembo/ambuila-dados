@@ -24,7 +24,7 @@ export default function Modal({
   return (
     <>
       <div className="modal d-block" tabIndex={-1} role="dialog" aria-modal="true" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-        <div className={`modal-dialog modal-dialog-scrollable modal-dialog-centered ${dialogCls}`}>
+        <div className={`modal-dialog modal-dialog-scrollable modal-dialog-centered ${dialogCls} modal-fullscreen-sm-down`}>
           <div className="modal-content" style={{ borderTop: '3px solid var(--inst-red)' }}>
             <div className="modal-header">
               <h5 className="modal-title h6 fw-bold text-inst-dark mb-0">{title}</h5>

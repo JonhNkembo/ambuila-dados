@@ -74,3 +74,21 @@ Regras aplicadas na base de dados (RLS) e repetidas nas Server Actions. Ajusta e
 ## Problemas comuns
 - *"O cadastro de novos utilizadores está desactivado"* ou *"configuração não encontrada"*: corre `supabase/fix_cadastro.sql` no SQL Editor.
 - Não consigo entrar (email não chegou / conta pendente / conta inexistente): corre `supabase/liberar_entrada.sql`. Confirma os emails em espera e deixa `admin@gmail.com` activo como Superadministrador.
+
+---
+
+## AUTENTICAÇÃO (versão actual) – leia antes de pôr em produção
+
+1. **SQL novo:** corra `supabase/5_autenticacao.sql` no SQL Editor (depois dos ficheiros 1 a 4). Limita os perfis pedidos no cadastro e impede o utilizador de alterar o próprio email.
+2. **Cadastro:** só se pode pedir *Director de Turismo e Cultura*, *Funcionário de Sector* ou *Funcionário Normal*. Pede-se a palavra-passe duas vezes. O utilizador recebe um email para confirmar o endereço e **a conta fica pendente até o Superadministrador a aprovar** (Utilizadores → Aprovar). Só então consegue entrar. O Administrador Municipal não aprova contas novas.
+3. **Esqueceu a senha:** link no login. No Supabase → Authentication → Email Templates → **Reset password**, use:
+   `<a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery&next=/redefinir-senha">Redefinir a palavra-passe</a>`
+   e em *URL Configuration → Redirect URLs* acrescente `http://localhost:3000/**` (e o domínio final com `/**`).
+4. **Continuar com Google:**
+   - Google Cloud Console → *APIs e serviços → Credenciais → ID de cliente OAuth (Aplicação Web)*. Em *URIs de redireccionamento autorizados* ponha `https://<SEU-PROJECTO>.supabase.co/auth/v1/callback`.
+   - Supabase → Authentication → Providers → **Google**: active e cole o *Client ID* e o *Client Secret*.
+   - Supabase → URL Configuration → Redirect URLs: acrescente `http://localhost:3000/auth/callback` (e o do domínio final).
+   - Quem entra pela 1.ª vez com Google fica pendente, como no cadastro normal.
+5. **Meu perfil:** o email não pode ser editado. Para mudar a palavra-passe pede-se a actual, a nova e a confirmação.
+6. **Comunas:** Configurações → *Comunas* (cadastrar e editar nome, área e estado).
+7. **Mapa:** o ponto central é a sede (`MUNICIPAL_SEAT` em `src/lib/constants.ts`); ajuste as coordenadas se tiver as oficiais.

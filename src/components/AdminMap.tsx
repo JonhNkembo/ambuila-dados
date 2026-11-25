@@ -18,7 +18,7 @@ export default function AdminMap({ locations, communes, profile }: { locations: 
         <div className="inst-card p-3">
           <div className="d-flex flex-wrap justify-content-between align-items-center gap-2 mb-3">
             <span className="fw-bold small text-inst-dark">Cartografia Municipal de Ambuíla (OpenStreetMap) • {pts.length} pontos</span>
-            <div className="d-flex gap-2">
+            <div className="d-flex flex-wrap gap-2">
               <select className="form-select form-select-sm w-auto" value={cat} onChange={(e) => setCat(e.target.value)} aria-label="Categoria">
                 <option value="ALL">Todas Categorias</option>
                 {MAP_CATEGORIES.map((c) => <option key={c}>{c}</option>)}

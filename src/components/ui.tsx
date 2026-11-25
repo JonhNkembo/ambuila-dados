@@ -1,6 +1,6 @@
 'use client';
 import { useEffect, useRef, useState, type CSSProperties, type ElementType, type ReactNode, type RefObject } from 'react';
-import { ArrowUp } from 'lucide-react';
+import { ArrowUp, Eye, EyeOff } from 'lucide-react';
 
 /** Devolve [ref, visível]: fica true (uma só vez) quando o elemento entra no ecrã. */
 export function useInView<T extends HTMLElement>(threshold = 0.15): [RefObject<T>, boolean] {
@@ -108,5 +108,57 @@ export function BackToTop() {
       onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}>
       <ArrowUp size={20} />
     </button>
+  );
+}
+
+const STRENGTH = [
+  { label: 'Muito fraca', color: '#B4412E' }, { label: 'Fraca', color: '#B4412E' }, { label: 'Razoável', color: '#C28B1E' },
+  { label: 'Boa', color: '#6DAF7C' }, { label: 'Forte', color: '#1B5E3B' }, { label: 'Excelente', color: '#0F3D26' },
+];
+function passwordScore(p: string) {
+  if (!p) return 0;
+  let s = 0;
+  if (p.length >= 8) s++;
+  if (p.length >= 12) s++;
+  if (/[a-z]/.test(p) && /[A-Z]/.test(p)) s++;
+  if (/\d/.test(p)) s++;
+  if (/[^A-Za-z0-9]/.test(p)) s++;
+  return s;
+}
+
+/** Campo de palavra-passe com botão "mostrar/esconder" e (opcional) medidor de força. */
+export function PasswordField({
+  name, label, value, onChange, autoComplete = 'new-password', required = true, minLength, meter = false, id, placeholder, hint, className = 'mb-3',
+}: {
+  name: string; label: ReactNode; value?: string; onChange?: (v: string) => void; autoComplete?: string; required?: boolean;
+  minLength?: number; meter?: boolean; id?: string; placeholder?: string; hint?: ReactNode; className?: string;
+}) {
+  const [show, setShow] = useState(false);
+  const [inner, setInner] = useState('');
+  const fid = id ?? name;
+  const v = value ?? inner;
+  const st = STRENGTH[passwordScore(v)];
+  return (
+    <div className={className}>
+      <label className="form-label small fw-semibold" htmlFor={fid}>{label}</label>
+      <div className="input-group">
+        <input id={fid} name={name} type={show ? 'text' : 'password'} className="form-control" required={required} minLength={minLength}
+          autoComplete={autoComplete} placeholder={placeholder} value={value}
+          onChange={(e) => { setInner(e.target.value); onChange?.(e.target.value); }} />
+        <button type="button" className="btn btn-outline-secondary" tabIndex={-1} onClick={() => setShow((x) => !x)}
+          aria-label={show ? 'Esconder palavra-passe' : 'Mostrar palavra-passe'}>
+          {show ? <EyeOff size={16} /> : <Eye size={16} />}
+        </button>
+      </div>
+      {meter && v && (
+        <div className="mt-2">
+          <div className="pbar-track" style={{ height: 6 }}>
+            <div className="pbar-fill" style={{ width: `${(passwordScore(v) / 5) * 100}%`, ['--pbar-color' as string]: st.color, transition: 'width .3s' }} />
+          </div>
+          <div className="pbar-sub">Força: {st.label}</div>
+        </div>
+      )}
+      {hint && <div className="form-text">{hint}</div>}
+    </div>
   );
 }

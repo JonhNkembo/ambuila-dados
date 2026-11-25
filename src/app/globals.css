@@ -515,3 +515,102 @@ a { text-underline-offset: 3px; }
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
   .reveal { opacity: 1; transform: none; }
 }
+
+/* ==========================================================================
+   MAPA: nomes nos pontos e ponto central (sede municipal)
+   ========================================================================== */
+.leaflet-tooltip.map-label {
+  background: rgba(255, 255, 255, .94); border: 1px solid var(--inst-border); border-radius: 6px; box-shadow: var(--shadow-sm);
+  color: var(--inst-dark); font: 700 11px/1.2 var(--font-body); padding: 2px 7px; max-width: 170px; white-space: normal; text-align: center;
+}
+.leaflet-tooltip-bottom.map-label::before { border-bottom-color: var(--inst-border); }
+.leaflet-tooltip.map-label-seat {
+  background: var(--inst-dark); color: #F7DE8B; border-color: var(--flag-gold); font-size: 12.5px; font-weight: 800; padding: 3px 10px; letter-spacing: .02em;
+}
+.leaflet-tooltip-bottom.map-label-seat::before { border-bottom-color: var(--flag-gold); }
+.labels-hidden .leaflet-tooltip.map-label:not(.map-label-seat) { display: none; }
+.seat-marker { position: relative; width: 44px; height: 44px; filter: drop-shadow(0 4px 6px rgba(0, 0, 0, .35)); }
+.seat-marker svg { position: relative; z-index: 2; }
+.seat-pulse { position: absolute; inset: 4px; border-radius: 50%; background: rgba(234, 179, 8, .5); animation: seat-pulse 2.4s ease-out infinite; z-index: 1; }
+.seat-pulse-2 { animation-delay: 1.2s; }
+@keyframes seat-pulse { 0% { transform: scale(.7); opacity: .9; } 100% { transform: scale(2.3); opacity: 0; } }
+
+/* ==========================================================================
+   DESTAQUES: cartões fluidos (1 coluna no telemóvel → várias no ecrã grande)
+   ========================================================================== */
+.cards-grid { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fill, minmax(min(100%, 290px), 1fr)); }
+.cards-grid-sm { grid-template-columns: repeat(auto-fill, minmax(min(100%, 210px), 1fr)); }
+.dest-card { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.dest-media { position: relative; aspect-ratio: 16 / 10; overflow: hidden; background: linear-gradient(135deg, var(--inst-primary-soft), var(--inst-gold-light)); display: flex; align-items: center; justify-content: center; color: var(--inst-primary); }
+.dest-media img { width: 100%; height: 100%; object-fit: cover; transition: transform .8s var(--ease); }
+.dest-card:hover .dest-media img { transform: scale(1.06); }
+.dest-tag { position: absolute; left: 12px; top: 12px; background: var(--inst-gold); color: #fff; font-size: .66rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; padding: .25rem .6rem; border-radius: 999px; box-shadow: var(--shadow-sm); }
+.dest-body { display: flex; flex-direction: column; flex: 1; padding: 1rem 1.1rem 1.1rem; }
+.dest-text { white-space: pre-line; color: var(--inst-muted); font-size: .88rem; margin: 0; }
+.dest-text.clamped { display: -webkit-box; -webkit-line-clamp: 4; -webkit-box-orient: vertical; overflow: hidden; }
+.dest-more { align-self: flex-start; margin-top: .5rem; padding: 0; border: 0; background: none; color: var(--inst-primary); font-weight: 700; font-size: .82rem; }
+.dest-more:hover { color: var(--inst-gold); }
+
+/* ==========================================================================
+   RESPONSIVIDADE (telemóvel, tablet, portátil, ecrã grande)
+   ========================================================================== */
+img, svg, video, canvas { max-width: 100%; }
+.table-responsive { -webkit-overflow-scrolling: touch; }
+.sidebar-backdrop { position: fixed; inset: 0; z-index: 1035; background: rgba(10, 43, 27, .55); backdrop-filter: blur(2px); animation: fade-up .25s var(--ease) both; }
+
+@media (max-width: 1199.98px) {
+  .hero-title { font-size: clamp(1.7rem, 4.4vw, 2.4rem); }
+  .public-hero { padding: 3.5rem 0 5.5rem; }
+}
+
+@media (max-width: 991.98px) {
+  .public-navbar .navbar-collapse { padding: .75rem 0 .25rem; }
+  .public-navbar .navbar-collapse .btn { width: 100%; margin: .25rem 0 !important; }
+  .public-navbar .nav-link::after { left: 0; right: auto; width: 32px; }
+  .glass-panel { margin-top: .5rem; }
+  .map-container { min-height: 300px; }
+  .admin-topbar { padding: .65rem 1rem; }
+  #admin-sidebar { width: min(86vw, 300px); }
+}
+
+@media (max-width: 767.98px) {
+  body { font-size: .92rem; }
+  .public-hero { padding: 2.5rem 0 4.75rem; }
+  .public-hero::after { height: 44px; }
+  .hero-orb { display: none; }
+  .hero-stats { gap: .5rem; }
+  .hero-stat { padding: .65rem .7rem; }
+  .hero-stat b { font-size: 1.25rem; }
+  .hero-stat span { font-size: .62rem; }
+  .hero-dots { bottom: 60px; }
+  .big-number { font-size: clamp(1.9rem, 9vw, 2.4rem); }
+  .section-title { font-size: 1.3rem; }
+  .kpi-value { font-size: 1.35rem; }
+  .auth-card { border-radius: 16px; }
+  .modal-content { border-radius: 0; }
+  .ai-chat-box { height: 360px; }
+  .ai-msg { max-width: 94%; }
+  .to-top { right: 14px; bottom: 14px; width: 42px; height: 42px; }
+  .table > :not(caption) > * > * { padding: .55rem .6rem; }
+}
+
+@media (max-width: 575.98px) {
+  .container { padding-left: 16px; padding-right: 16px; }
+  .gov-top-ribbon { font-size: .66rem; }
+  .public-navbar .navbar-brand { gap: .6rem !important; max-width: calc(100% - 56px); }
+  .public-navbar .navbar-brand .text-muted { display: none; }
+  .hero-chip { font-size: .7rem; padding: .35rem .7rem; }
+  .hero-search .btn { width: 100%; }
+  .hero-quote { font-size: 1rem; }
+  .project-card { padding: 1rem; }
+  .auth-panel { padding: 1rem .75rem; }
+  .map-container { min-height: 280px; }
+  .leaflet-tooltip.map-label { font-size: 10px; max-width: 120px; }
+  .kpi-card { padding: .85rem .9rem; }
+  .site-footer { text-align: center; }
+  .site-footer .text-md-end { text-align: center !important; }
+}
+
+@media (min-width: 1600px) {
+  .container { max-width: 1480px; }
+}

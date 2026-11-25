@@ -103,3 +103,13 @@ export const MAP_COLORS: Record<string, string> = {
 };
 
 export const AMBUILA_CENTER: [number, number] = [-7.455, 14.645];
+
+/** Perfis que uma pessoa pode pedir no cadastro público. Os perfis de administração só são atribuídos pelo Superadministrador. */
+export const REGISTER_ROLES: Role[] = ['Director de Turismo e Cultura', 'Funcionário de Sector', 'Funcionário Normal'];
+
+/** Ponto central do mapa: sede municipal. Ajuste `position` se tiver as coordenadas oficiais exactas. */
+export const MUNICIPAL_SEAT = {
+  name: 'Nova Ambuíla',
+  subtitle: 'Sede Municipal de Ambuíla',
+  position: AMBUILA_CENTER,
+};

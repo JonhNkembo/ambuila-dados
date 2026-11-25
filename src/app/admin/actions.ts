@@ -2,9 +2,10 @@
 
 import { revalidatePath } from 'next/cache';
 import { requireProfile } from '@/lib/session';
+import { createClient as createProbeClient } from '@supabase/supabase-js';
 import { createAdminClient } from '@/lib/supabase/admin';
 import {
-  canAssign, canDelete, canManageCommunes, canManageContent, canManageHeroAndRegistration,
+  canAssign, canDelete, canManageCommunes, isSuper, canManageContent, canManageHeroAndRegistration,
   canManageInstitutions, canManageTerritory, canManageUsers, canSubmit, canValidate, submitCategories,
 } from '@/lib/permissions';
 import { ROLES, ROLE_RANK, STATUSES } from '@/lib/constants';
@@ -220,40 +221,95 @@ export async function addInstitution(fd: FormData): Promise<ActionResult> {
   return done('Instituição registada.');
 }
 
+const COMMUNE_STATUS = ['Activa', 'Inactiva'];
+
+function communeFields(fd: FormData): { name: string; area_km2: number | null; status: string } | string {
+  const name = str(fd, 'name');
+  if (name.length < 2) return 'O nome da comuna é obrigatório.';
+  const rawArea = str(fd, 'area_km2').replace(',', '.');
+  let area: number | null = null;
+  if (rawArea) {
+    area = Number(rawArea);
+    if (!Number.isFinite(area) || area < 0) return 'A área deve ser um número positivo (km²).';
+  }
+  const status = COMMUNE_STATUS.includes(str(fd, 'status')) ? str(fd, 'status') : 'Activa';
+  return { name, area_km2: area, status };
+}
+
+const communeError = (e: { code?: string; message: string }) =>
+  e.code === '23505' ? 'Já existe uma comuna com esse nome.' : e.message;
+
 export async function addCommune(fd: FormData): Promise<ActionResult> {
   const ctx = await requireProfile();
   if (!canManageCommunes(ctx.profile)) return fail('Sem permissão para gerir comunas.');
-  const name = str(fd, 'name');
-  if (!name) return fail('O nome da comuna é obrigatório.');
-  const { count } = await ctx.supabase.from('communes').select('*', { count: 'exact', head: true });
-  const code = `AMB-${String((count ?? 0) + 1).padStart(2, '0')}`;
-  const { error } = await ctx.supabase.from('communes').insert({ name, code, status: 'Activa' });
-  if (error) return fail(error.message);
-  await audit(ctx, 'Configurações', `Adicionou a comuna "${name}" (${code}).`);
+  const f = communeFields(fd);
+  if (typeof f === 'string') return fail(f);
+  const { data: rows } = await ctx.supabase.from('communes').select('code');
+  const max = Math.max(0, ...(rows ?? []).map((r: { code: string }) => Number(String(r.code).replace(/\D/g, '')) || 0));
+  const code = `AMB-${String(max + 1).padStart(2, '0')}`;
+  const { error } = await ctx.supabase.from('communes').insert({ ...f, code });
+  if (error) return fail(communeError(error));
+  await audit(ctx, 'Configurações', `Adicionou a comuna "${f.name}" (${code}).`);
   refresh();
   return done('Comuna adicionada.');
 }
 
+/** Edita nome, área e estado. Se o nome mudar, as referências (datasets, projectos, mapa…) acompanham-no (ON UPDATE CASCADE). */
+export async function updateCommune(fd: FormData): Promise<ActionResult> {
+  const ctx = await requireProfile();
+  if (!canManageCommunes(ctx.profile)) return fail('Sem permissão para gerir comunas.');
+  const id = str(fd, 'id');
+  if (!id) return fail('Comuna inválida.');
+  const f = communeFields(fd);
+  if (typeof f === 'string') return fail(f);
+  const { data: before } = await ctx.supabase.from('communes').select('name').eq('id', id).maybeSingle();
+  if (!before) return fail('Comuna não encontrada.');
+  const { error } = await ctx.supabase.from('communes').update(f).eq('id', id);
+  if (error) return fail(communeError(error));
+  await audit(ctx, 'Configurações', before.name === f.name ? `Editou a comuna "${f.name}".` : `Editou a comuna "${before.name}" → "${f.name}".`);
+  refresh();
+  return done('Comuna actualizada.');
+}
+
 /* ------------------------------ Utilizadores ------------------------------ */
+/** Só nome e telefone. O email é fixo (identifica a conta) e a função é atribuída pela administração. */
 export async function updateOwnProfile(fd: FormData): Promise<ActionResult> {
   const ctx = await requireProfile();
   const name = str(fd, 'name');
-  if (!name) return fail('O nome é obrigatório.');
+  if (name.length < 3) return fail('Indique o nome completo.');
   const { error } = await ctx.supabase
     .from('profiles')
     .update({ name, phone: str(fd, 'phone') || null })
     .eq('id', ctx.user.id);
   if (error) return fail(error.message);
-
-  const password = str(fd, 'password');
-  if (password) {
-    if (password.length < 8) return fail('A nova palavra-passe deve ter pelo menos 8 caracteres.');
-    const { error: pwErr } = await ctx.supabase.auth.updateUser({ password });
-    if (pwErr) return fail(pwErr.message);
-  }
   await audit(ctx, 'Meu perfil', 'Actualizou os dados do próprio perfil.');
   refresh();
   return done('Perfil actualizado com sucesso.');
+}
+
+/** Palavra-passe actual → nova → confirmação. A actual é verificada com um cliente isolado (não mexe na sessão). */
+export async function changePassword(fd: FormData): Promise<ActionResult> {
+  const ctx = await requireProfile();
+  const current = String(fd.get('current_password') ?? '');
+  const next = String(fd.get('new_password') ?? '');
+  const confirm = String(fd.get('confirm_password') ?? '');
+  if (!current) return fail('Indique a palavra-passe actual.');
+  if (next.length < 8) return fail('A nova palavra-passe deve ter pelo menos 8 caracteres.');
+  if (next !== confirm) return fail('A confirmação não coincide com a nova palavra-passe.');
+  if (next === current) return fail('A nova palavra-passe tem de ser diferente da actual.');
+  const email = ctx.user.email;
+  if (!email) return fail('Esta conta não tem palavra-passe definida.');
+
+  const probe = createProbeClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+    auth: { persistSession: false, autoRefreshToken: false, detectSessionInUrl: false },
+  });
+  const { error: badCurrent } = await probe.auth.signInWithPassword({ email, password: current });
+  if (badCurrent) return fail('A palavra-passe actual está incorrecta.');
+
+  const { error } = await ctx.supabase.auth.updateUser({ password: next });
+  if (error) return fail(/same|different/i.test(error.message) ? 'A nova palavra-passe tem de ser diferente da actual.' : 'Não foi possível alterar a palavra-passe.');
+  await audit(ctx, 'Meu perfil', 'Alterou a própria palavra-passe.');
+  return done('Palavra-passe alterada com sucesso.');
 }
 
 /** Altera função, sector e estado de uma conta (service role: a RLS não deixa editar perfis alheios). */
@@ -266,8 +322,9 @@ export async function updateUserAccess(userId: string, role: Role, sector: strin
   if (role === 'Funcionário de Sector' && !sector) return fail('Indique o sector do funcionário.');
 
   const admin = createAdminClient();
-  const { data: target } = await admin.from('profiles').select('name, role').eq('id', userId).single();
+  const { data: target } = await admin.from('profiles').select('name, role, active').eq('id', userId).single();
   if (!target) return fail('Utilizador não encontrado.');
+  if (active && !target.active && !isSuper(ctx.profile)) return fail('Só o Superadministrador pode aprovar contas novas.');
   if (!canAssign(ctx.profile, target.role as Role)) return fail('Não pode alterar um utilizador com este perfil.');
 
   const { error } = await admin.from('profiles')

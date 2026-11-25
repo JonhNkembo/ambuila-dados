@@ -2,14 +2,14 @@
 import { useState, useTransition } from 'react';
 import { useToast } from './Toast';
 import ActionForm from './ActionForm';
-import { createUser, setRegistration, setRegistrationMode, updateUserAccess } from '@/app/admin/actions';
-import { assignableRoles } from '@/lib/permissions';
+import { createUser, setRegistration, updateUserAccess } from '@/app/admin/actions';
+import { assignableRoles, isSuper } from '@/lib/permissions';
 import { ROLE_RANK } from '@/lib/constants';
 import type { Profile, RegistrationMode, Role } from '@/lib/types';
 
 interface Draft { role: Role; sector: string | null; active: boolean }
 
-export default function UsersTable({ users, me, categories, allowRegistration, mode }: { users: Profile[]; me: Profile; categories: string[]; allowRegistration: boolean; mode: RegistrationMode }) {
+export default function UsersTable({ users, me, categories, allowRegistration }: { users: Profile[]; me: Profile; categories: string[]; allowRegistration: boolean; mode?: RegistrationMode }) {
   const toast = useToast();
   const [pending, start] = useTransition();
   const [draft, setDraft] = useState<Record<string, Draft>>({});
@@ -27,15 +27,10 @@ export default function UsersTable({ users, me, categories, allowRegistration, m
         <div>
           <div className="fw-bold text-inst-dark small">Tela de cadastro na página de login</div>
           <div className="small text-muted">
-            {allowRegistration ? (mode === 'email' ? 'ACTIVA: quem confirmar o email entra logo com o perfil que escolheu.' : 'ACTIVA: depois de confirmar o email, a conta aguarda aprovação.') : 'OCULTA: só entra quem já tem conta criada pela administração.'}
+            {allowRegistration ? 'ACTIVA: quem se cadastra confirma o email e fica PENDENTE até o Superadministrador aprovar.' : 'OCULTA: só entra quem já tem conta criada pela administração.'}
           </div>
         </div>
         <div className="d-flex align-items-center gap-3">
-        <select className="form-select form-select-sm w-auto" value={mode} disabled={pending} aria-label="Modo de cadastro"
-          onChange={(e) => start(async () => { const r = await setRegistrationMode(e.target.value as RegistrationMode); toast(r.message, r.ok); })}>
-          <option value="email">1.ª fase: confirmar email activa a conta</option>
-          <option value="approval">Email + aprovação do administrador</option>
-        </select>
         <div className="form-check form-switch fs-5 mb-0">
           <input className="form-check-input" type="checkbox" role="switch" checked={allowRegistration} disabled={pending} aria-label="Tela de cadastro"
             onChange={(e) => start(async () => { const r = await setRegistration(e.target.checked); toast(r.message, r.ok); })} />
@@ -43,7 +38,7 @@ export default function UsersTable({ users, me, categories, allowRegistration, m
         </div>
       </div>
 
-      {pendingUsers > 0 && <div className="alert alert-warning py-2 small">{pendingUsers} conta(s) por aprovar: active-as e atribua a função na tabela.</div>}
+      {pendingUsers > 0 && <div className="alert alert-warning py-2 small">{pendingUsers} conta(s) por aprovar. {isSuper(me) ? 'Aprove-as abaixo ou active-as na tabela atribuindo a função.' : 'Só o Superadministrador pode aprová-las.'}</div>}
 
       <div className="row g-4">
         <div className="col-xl-8">
@@ -58,12 +53,16 @@ export default function UsersTable({ users, me, categories, allowRegistration, m
                       <tr key={u.id}>
                         <td><div className="fw-semibold">{u.name}{u.id === me.id && <span className="badge bg-light text-dark border ms-1">Você</span>}</div>
                           <div className="text-muted" style={{ fontSize: '0.72rem' }}>{u.email}</div>
-                          {!u.active && u.requested_role && (
-                            <div className="mt-1">
-                              <span className="badge bg-warning text-dark">Pediu: {u.requested_role}{u.requested_sector ? ` (${u.requested_sector})` : ''}</span>
-                              <button className="btn btn-sm btn-success py-0 ms-1" disabled={pending || !roles.includes(u.requested_role)}
-                                title={roles.includes(u.requested_role) ? 'Aprovar com o perfil pedido' : 'O seu nível não permite atribuir este perfil'}
-                                onClick={() => start(async () => { const r = await updateUserAccess(u.id, u.requested_role!, u.requested_sector, true); toast(r.message, r.ok); })}>Aprovar</button>
+                          {!u.active && (
+                            <div className="mt-1 d-flex flex-wrap align-items-center gap-1">
+                              {u.requested_role
+                                ? <span className="badge bg-warning text-dark">Pediu: {u.requested_role}{u.requested_sector ? ` (${u.requested_sector})` : ''}</span>
+                                : <span className="badge bg-secondary">Sem perfil pedido</span>}
+                              {isSuper(me)
+                                ? <button className="btn btn-sm btn-success py-0" disabled={pending}
+                                    title="Aprovar a conta com o perfil pedido"
+                                    onClick={() => start(async () => { const r = await updateUserAccess(u.id, u.requested_role ?? 'Funcionário Normal', u.requested_sector, true); toast(r.message, r.ok); })}>Aprovar</button>
+                                : <span className="badge bg-light text-dark border">Aguarda o Superadministrador</span>}
                             </div>
                           )}</td>
                         <td style={{ minWidth: 190 }}>
@@ -84,7 +83,7 @@ export default function UsersTable({ users, me, categories, allowRegistration, m
                         </td>
                         <td>
                           {editable(u) ? (
-                            <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={v.active} aria-label={`Activo: ${u.name}`}
+                            <div className="form-check form-switch"><input className="form-check-input" type="checkbox" role="switch" checked={v.active} aria-label={`Activo: ${u.name}`} disabled={!u.active && !isSuper(me)} title={!u.active && !isSuper(me) ? 'Só o Superadministrador aprova contas novas' : undefined}
                               onChange={(e) => setDraft((d) => ({ ...d, [u.id]: { ...v, active: e.target.checked } }))} /></div>
                           ) : <span className={`px-2 py-1 rounded ${u.active ? 'badge-status-publicado' : 'badge-status-submetido'}`}>{u.active ? 'Activo' : 'Pendente'}</span>}
                         </td>

@@ -73,6 +73,7 @@ export default function AdminShell({ profile, logoUrl, children }: { profile: Pr
 
   return (
     <div id="admin-wrapper">
+      {open && <div className="sidebar-backdrop d-lg-none no-print" onClick={() => setOpen(false)} aria-hidden />}
       <aside id="admin-sidebar" className={`no-print ${open ? 'show' : ''}`}>
         <div className="sidebar-header d-flex align-items-center justify-content-between">
           <div className="d-flex align-items-center gap-2">
@@ -110,7 +111,7 @@ export default function AdminShell({ profile, logoUrl, children }: { profile: Pr
             <button className="btn btn-sm btn-outline-secondary d-lg-none" onClick={() => setOpen(true)} aria-label="Abrir menu"><Menu size={18} /></button>
             <div>
               <h1 className="h5 fw-bold text-inst-dark mb-0" style={{ fontFamily: 'var(--font-head)' }}>{current.title}</h1>
-              <small className="text-muted">{current.sub}</small>
+              <small className="text-muted d-none d-md-block">{current.sub}</small>
             </div>
           </div>
           <div className="d-flex align-items-center gap-3">

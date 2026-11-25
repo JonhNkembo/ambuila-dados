@@ -2,7 +2,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
-  ShieldCheck, MapPin, Search, Building2, Mail, Clock, FileText, ArrowRight, Database, Layers, Hammer,
+  ShieldCheck, MapPin, Search, Building2, Mail, Clock, FileText, ArrowRight, Database, Layers, Hammer, Sparkles,
 } from 'lucide-react';
 import Icon from './Icon';
 import Brand from './Brand';
@@ -30,6 +30,29 @@ function BigValue({ value }: { value: string | null }) {
     return <CountUp value={Number(raw.replace(/[.\s]/g, ''))} format={(n) => formatNumber(Math.round(n))} />;
   }
   return <>{raw}</>;
+}
+
+/** Cartão de destaque: imagem 16:10 (ou fundo institucional), título e texto com "Ler mais". */
+function DestaqueCard({ d, delay }: { d: PortalContent; delay: number }) {
+  const [open, setOpen] = useState(false);
+  const long = (d.body ?? '').length > 170;
+  const src = d.image_path ? siteUrl(d.image_path) : null;
+  return (
+    <Reveal className="h-100" delay={delay}>
+      <article className="inst-card inst-card-hover dest-card">
+        <div className="dest-media">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          {src ? <img src={src} alt={d.title} loading="lazy" /> : <Sparkles size={42} style={{ opacity: 0.5 }} />}
+          <span className="dest-tag">Destaque</span>
+        </div>
+        <div className="dest-body">
+          <h3 className="h6 fw-bold text-inst-dark">{d.title}</h3>
+          <p className={`dest-text ${long && !open ? 'clamped' : ''}`}>{d.body}</p>
+          {long && <button type="button" className="dest-more" onClick={() => setOpen((o) => !o)}>{open ? 'Ver menos' : 'Ler mais'}</button>}
+        </div>
+      </article>
+    </Reveal>
+  );
 }
 
 export default function PublicPortal({ datasets, communes, categories, projects, locations, publications, loggedIn, logoUrl, hero, content, allowRegistration }: Props) {
@@ -264,9 +287,9 @@ export default function PublicPortal({ datasets, communes, categories, projects,
           <div className="container">
             <Reveal>{sectionTitle('Município de Ambuíla', 'Ambuíla em Destaque')}</Reveal>
             {numeros.length > 0 && (
-              <div className="row g-3 mb-4">
+              <div className="cards-grid cards-grid-sm mb-4">
                 {numeros.map((n, i) => (
-                  <Reveal className="col-6 col-lg-3" key={n.id} delay={i * 90}>
+                  <Reveal className="h-100" key={n.id} delay={i * 90}>
                     <div className="inst-card inst-card-hover p-4 h-100" style={{ borderTop: '4px solid var(--inst-gold)' }}>
                       <div className="big-number"><BigValue value={n.big_value} /></div>
                       {n.big_label && <div className="text-uppercase fw-bold small text-muted mt-1" style={{ letterSpacing: '0.04em' }}>{n.big_label}</div>}
@@ -278,23 +301,8 @@ export default function PublicPortal({ datasets, communes, categories, projects,
               </div>
             )}
             {destaques.length > 0 && (
-              <div className="row g-3">
-                {destaques.map((d, i) => (
-                  <Reveal className="col-md-6 col-xl-4" key={d.id} delay={(i % 3) * 100}>
-                    <div className="inst-card inst-card-hover h-100 overflow-hidden">
-                      {d.image_path && (
-                        <div className="img-frame">
-                          {/* eslint-disable-next-line @next/next/no-img-element */}
-                          <img className="destaque-img" src={siteUrl(d.image_path)!} alt={d.title} />
-                        </div>
-                      )}
-                      <div className="p-3">
-                        <h3 className="h6 fw-bold text-inst-dark">{d.title}</h3>
-                        <p className="small text-muted mb-0" style={{ whiteSpace: 'pre-line' }}>{d.body}</p>
-                      </div>
-                    </div>
-                  </Reveal>
-                ))}
+              <div className="cards-grid">
+                {destaques.map((d, i) => <DestaqueCard key={d.id} d={d} delay={(i % 3) * 100} />)}
               </div>
             )}
           </div>
@@ -500,7 +508,7 @@ export default function PublicPortal({ datasets, communes, categories, projects,
               {noticias.length > 0 && (
                 <div className={publications.length > 0 ? 'col-lg-5' : 'col-12'}>
                   <Reveal>{sectionTitle('Actualidade Institucional', 'Notícias e Comunicados')}</Reveal>
-                  <div className="d-flex flex-column gap-3">
+                  <div className={publications.length > 0 ? 'd-flex flex-column gap-3' : 'cards-grid'}>
                     {noticias.map((n, i) => (
                       <Reveal key={n.id} delay={(i % 4) * 70}>
                         <div className="inst-card inst-card-hover news-card p-3">
@@ -541,7 +549,7 @@ export default function PublicPortal({ datasets, communes, categories, projects,
                     <span><strong className="text-inst-dark">Administração Municipal de Ambuíla</strong><br />Gabinete de Estudos, Planeamento e Estatística (GEPE)</span></li>
                   <li className="d-flex align-items-center gap-3"><span className="kpi-icon" style={{ ['--kpi-accent' as string]: PALETTE.clay }}><MapPin size={16} /></span><span>Sede Municipal de Ambuíla, Província do Uíge, Angola</span></li>
                   <li className="d-flex align-items-center gap-3"><span className="kpi-icon" style={{ ['--kpi-accent' as string]: PALETTE.ochre }}><Mail size={16} /></span><span>dados@ambuila.uige.gov.ao</span></li>
-                  <li className="d-flex align-items-center gap-3"><span className="kpi-icon" style={{ ['--kpi-accent' as string]: PALETTE.river }}><Clock size={16} /></span><span></span></li>
+                  <li className="d-flex align-items-center gap-3"><span className="kpi-icon" style={{ ['--kpi-accent' as string]: PALETTE.river }}><Clock size={16} /></span><span>Segunda a Sexta-feira, 08h00 – 15h30</span></li>
                 </ul>
               </div>
             </Reveal>
@@ -558,7 +566,7 @@ export default function PublicPortal({ datasets, communes, categories, projects,
             </div>
             <div className="col-md-6 text-md-end small" style={{ color: '#A9C4B4' }}>
               <div style={{ fontFamily: 'var(--font-serif)', fontStyle: 'italic', color: '#F6E7B5' }}>&ldquo;Conhecer os dados. Compreender o território. Promover o desenvolvimento.&rdquo;</div>
-              <div className="mt-1">&copy;</div>
+              <div className="mt-1">&copy; 2026 Administração Municipal de Ambuíla. Todos os direitos reservados.</div>
             </div>
           </div>
         </div>
